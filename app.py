@@ -42,42 +42,35 @@ fig_scatter = px.scatter(data,
 st.plotly_chart(fig_scatter, use_container_width=True)
 
 
-# --- Interactive Box/Violin Plots for Numeric Variables with Selection ---
+# --- Interactive Box/Violin Plots for Numeric Variables ---
 st.header('Distribution of Numeric Variables by Personality (Box/Violin Plots)')
 
 numeric_columns = ['Time_spent_Alone', 'Social_event_attendance', 'Going_outside', 'Friends_circle_size', 'Post_frequency']
 target_column = 'Personality' # Already converted to string above
 
-# Add a selectbox for the user to choose the numeric variable
-selected_numeric_col = st.selectbox(
-    'Select a numeric variable to visualize:',
-    numeric_columns
-)
-
-# Generate the Box/Violin plot for the selected column
-if selected_numeric_col:
-    st.subheader(f'Distribution of {selected_numeric_col} by Personality')
+for col in numeric_columns:
+    st.subheader(f'Distribution of {col} by Personality')
 
     fig_bv = go.Figure()
 
-    # Add initial Box plot for the selected numeric column by Personality
+    # Add Box plot for the current numeric column by Personality
     fig_bv.add_trace(go.Box(
-        y=data[data[target_column] == '0'][selected_numeric_col], # Use string '0' and '1'
+        y=data[data[target_column] == '0'][col], # Use string '0' and '1'
         name='Extrovert (0)'
     ))
     fig_bv.add_trace(go.Box(
-        y=data[data[target_column] == '1'][selected_numeric_col], # Use string '0' and '1'
+        y=data[data[target_column] == '1'][col], # Use string '0' and '1'
         name='Introvert (1)'
     ))
 
     # Add Violin plot traces, initially hidden
     fig_bv.add_trace(go.Violin(
-        y=data[data[target_column] == '0'][selected_numeric_col],
+        y=data[data[target_column] == '0'][col],
         name='Extrovert (0)',
         visible=False # Initially hidden
     ))
     fig_bv.add_trace(go.Violin(
-        y=data[data[target_column] == '1'][selected_numeric_col],
+        y=data[data[target_column] == '1'][col],
         name='Introvert (1)',
         visible=False # Initially hidden
     ))
@@ -86,20 +79,20 @@ if selected_numeric_col:
     fig_bv.layout.update(
        updatemenus = [
           go.layout.Updatemenu(
-             type = "buttons", direction = "left", buttons=[ # Removed list() constructor
-                dict(
-                    args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
-                    label = "Box",
-                    method = "restyle",
-                    font=dict(color="black") # Add font color
-                ),
-                dict(
-                    args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
-                    label = "Violin",
-                    method = "restyle",
-                    font=dict(color="black") # Add font color
-                )
-             ],
+             type = "buttons", direction = "left", buttons=list(
+                [
+                   dict(
+                       args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
+                       label = "Box",
+                       method = "restyle"
+                   ),
+                   dict(
+                       args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
+                       label = "Violin",
+                       method = "restyle"
+                   )
+                ]
+             ),
              pad = {"r": 2, "t": 2},
              showactive = True,
              x = 0.11,
@@ -108,8 +101,8 @@ if selected_numeric_col:
              yanchor = "top"
           ),
        ],
-       title = f'Distribuição de {selected_numeric_col} por Personalidade', # Title is set in st.subheader
-       yaxis_title = selected_numeric_col
+       title = f'Distribuição de {col} por Personalidade', # Title is set in st.subheader
+       yaxis_title = col
     )
     st.plotly_chart(fig_bv, use_container_width=True)
 
