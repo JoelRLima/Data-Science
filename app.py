@@ -86,22 +86,20 @@ if selected_numeric_col:
     fig_bv.layout.update(
        updatemenus = [
           go.layout.Updatemenu(
-             type = "buttons", direction = "left", buttons=list(
-                [
-                   dict(
-                       args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
-                       label = "Box",
-                       method = "restyle",
-                       font=dict(color="black") # Add font color
-                   ),
-                   dict(
-                       args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
-                       label = "Violin",
-                       method = "restyle",
-                       font=dict(color="black") # Add font color
-                   )
-                ]
-             ),
+             type = "buttons", direction = "left", buttons=[ # Removed list() constructor
+                dict(
+                    args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
+                    label = "Box",
+                    method = "restyle",
+                    font=dict(color="black") # Add font color
+                ),
+                dict(
+                    args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
+                    label = "Violin",
+                    method = "restyle",
+                    font=dict(color="black") # Add font color
+                )
+             ],
              pad = {"r": 2, "t": 2},
              showactive = True,
              x = 0.11,
