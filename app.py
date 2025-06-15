@@ -91,12 +91,14 @@ if selected_numeric_col:
                    dict(
                        args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
                        label = "Box",
-                       method = "restyle"
+                       method = "restyle",
+                       font=dict(color="black") # Add font color
                    ),
                    dict(
                        args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
                        label = "Violin",
-                       method = "restyle"
+                       method = "restyle",
+                       font=dict(color="black") # Add font color
                    )
                 ]
              ),
