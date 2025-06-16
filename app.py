@@ -113,6 +113,56 @@ if selected_numeric_col:
     )
     st.plotly_chart(fig_bv, use_container_width=True)
 
+# --- Sunburst Chart Section ---
+  st.header('Gráfico Sunburst das Variáveis Categóricas por Personalidade')
+
+  # Legenda das Abreviações
+  st.markdown("""
+  **Legenda das Abreviações:**
+
+  *   **TSA:** Time_spent_Alone (Tempo Sozinho)
+  *   **SEA:** Social_event_attendance (Participação em eventos sociais)
+  *   **GO:** Going_outside (Sair)
+  *   **FCS:** Friends_circle_size (Tamanho do círculo de amizade)
+  *   **PF:** Post_frequency (Frequência de Postagem)
+  """)
+
+
+  # Load the categorized data
+  try:
+      categorized_data = pd.read_csv('categorized_data.csv')
+      # Ensure 'Personality' is treated as string for plotly if needed
+      if categorized_data['Personality'].dtype != 'object':
+          categorized_data['Personality'] = categorized_data['Personality'].astype(str)
+
+      # Define the path for the sunburst chart
+      # Incluindo mais colunas categóricas no path
+      path_columns = [
+          'Personality',
+          'Time_spent_Alone_category',
+          'Social_event_attendance_category',
+          'Going_outside_category',
+          'Friends_circle_size_category',
+          'Post_frequency_category'
+      ]
+
+      # Calculate counts for the sunburst chart
+      sunburst_data = categorized_data.groupby(path_columns).size().reset_index(name='count')
+
+      # Create the sunburst chart
+      fig_sunburst = px.sunburst(sunburst_data,
+                                path=path_columns,
+                                values='count',
+                                title='Distribuição Categórica por Personalidade') # Title can be adjusted
+
+      # Display the sunburst chart in Streamlit
+      st.plotly_chart(fig_sunburst, use_container_width=True)
+
+  except FileNotFoundError:
+      st.error("Error: 'categorized_data.csv' not found. Please ensure it's in the same directory as app.py.")
+  except Exception as e:
+      st.error(f"An error occurred while creating the Sunburst chart: {e}")
+
 
 # --- Optional: Add more sections for categorical variables, etc. ---
 # st.header('Distribution of Categorical Variables')
