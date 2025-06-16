@@ -135,33 +135,40 @@ try:
     if categorized_data['Personality'].dtype != 'object':
          categorized_data['Personality'] = categorized_data['Personality'].astype(str)
 
-    # Define the path for the sunburst chart
-    # Incluindo mais colunas categóricas no path
-    path_columns = [
-        'Personality',
-        'Time_spent_Alone_category',
-        'Social_event_attendance_category',
-        'Going_outside_category',
-        'Friends_circle_size_category',
-        'Post_frequency_category'
-    ]
+    # Identify the available categorical columns (excluding Personality)
+    available_categorical_columns = [col for col in categorized_data.columns if col.endswith('_category')]
 
-    # Calculate counts for the sunburst chart
-    sunburst_data = categorized_data.groupby(path_columns).size().reset_index(name='count')
+    # Add a multiselect widget for interactive column selection
+    selected_path_columns = st.multiselect(
+        'Selecione as variáveis para o caminho do gráfico Sunburst (a ordem importa):',
+        available_categorical_columns,
+        default=available_categorical_columns # Default selection includes all categorized columns
+    )
 
-    # Create the sunburst chart
-    fig_sunburst = px.sunburst(sunburst_data,
-                               path=path_columns,
-                               values='count',
-                               title='Distribuição Categórica por Personalidade') # Title can be adjusted
+    # Always include 'Personality' as the first level
+    path_columns_with_personality = ['Personality'] + selected_path_columns
 
-    # Display the sunburst chart in Streamlit
-    st.plotly_chart(fig_sunburst, use_container_width=True)
+    # Ensure at least 'Personality' is selected to avoid errors
+    if not selected_path_columns:
+        st.warning("Por favor, selecione pelo menos uma variável categórica além de 'Personality'.")
+    else:
+        # Calculate counts for the sunburst chart based on selected columns
+        sunburst_data = categorized_data.groupby(path_columns_with_personality).size().reset_index(name='count')
+
+        # Create the sunburst chart
+        fig_sunburst = px.sunburst(sunburst_data,
+                                   path=path_columns_with_personality,
+                                   values='count',
+                                   title='Distribuição Categórica por Personalidade') # Title can be adjusted
+
+        # Display the sunburst chart in Streamlit
+        st.plotly_chart(fig_sunburst, use_container_width=True)
 
 except FileNotFoundError:
     st.error("Error: 'categorized_data.csv' not found. Please ensure it's in the same directory as app.py.")
 except Exception as e:
     st.error(f"An error occurred while creating the Sunburst chart: {e}")
+
 
 
 # --- Optional: Add more sections for categorical variables, etc. ---
