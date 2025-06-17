@@ -179,7 +179,7 @@ elif opcao == "Sunburst Chart":
         st.error(f"An error occurred while creating the Sunburst chart: {e}")
 
 
-
+# Dist
 # --- Optional: Add more sections for categorical variables, etc. ---
 # st.header('Distribution of Categorical Variables')
 # ... add code for count plots or other categorical visualizations ...
