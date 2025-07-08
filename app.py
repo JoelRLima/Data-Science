@@ -3,8 +3,7 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 import numpy as np
-import joblib 
-# Import joblib to load the model
+import joblib # Import joblib to load the model
 
 st.set_page_config(layout="wide") # Optional: Use wide layout
 
@@ -189,14 +188,8 @@ if model: # Only show this section if the model was loaded successfully
     st.write("Insira os valores para cada característica para prever a personalidade (0: Extrovert, 1: Introvert).")
 
     # Create input fields for each feature used in the model
-    # Get the feature names from the model's training data (X_train)
-    # Assuming X_train was created in a previous cell and is available in the environment
-    try:
-        feature_names = X_train.columns.tolist()
-    except NameError:
-        st.error("Error: X_train not found. Please run the cell that trains the model first.")
-        feature_names = [] # Set empty list if X_train is not defined
-
+    # Get the feature names from the 'data' DataFrame after loading
+    feature_names = [col for col in data.columns if col != 'Personality']
 
     input_data = {}
     if feature_names: # Only create inputs if feature names are available
@@ -207,9 +200,11 @@ if model: # Only show this section if the model was loaded successfully
                 if data[feature].dtype in ['float64', 'int64']:
                      default_value = float(data[feature].mean())
                 elif data[feature].dtype == 'bool':
+                     # Convert boolean to int for mean calculation if needed, but for default value mode is better
                      default_value = bool(data[feature].mode()[0])
                 else:
-                     default_value = str(data[feature].mode()[0])
+                     default_value = str(data[feature].mode()[0]) # Handle other dtypes appropriately
+
 
             if data[feature].dtype in ['float64', 'int64']:
                  input_data[feature] = st.number_input(f'Enter value for {feature}', value=default_value)
