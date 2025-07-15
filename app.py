@@ -159,9 +159,6 @@ elif pagina == "Sunburst":
 
 # --- Página: Previsão ---
 elif pagina == "Previsão":
-    st.header('Prever Personalidade')
-
-if model: # Only show this section if the model was loaded successfully
     st.header('Prever Personalidade com o Modelo')
 
     if model:
@@ -198,4 +195,3 @@ if model: # Only show this section if the model was loaded successfully
                 st.error(f"Erro durante a predição: {e}")
     else:
         st.warning("Modelo não carregado. A previsão não está disponível.")
-
