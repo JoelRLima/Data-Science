@@ -3,253 +3,195 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 import numpy as np
-import joblib # Import joblib to load the model
+import joblib
 
-st.set_page_config(layout="wide") # Optional: Use wide layout
+st.set_page_config(layout="wide")  # Layout amplo
 
 st.title('Extrovert vs. Introvert Behavior Data Analysis')
 
-# --- Data Loading and Processing ---
-# In a deployed Streamlit app, you'd typically load your data here.
-# Assuming you have saved your processed 'data' DataFrame to 'processed_data.csv'
+# --- Carregamento dos dados ---
 try:
     data = pd.read_csv('processed_data.csv')
-    # Convert 'Personality' to string for better color labels in Plotly Express
     data['Personality'] = data['Personality'].astype(str)
-    # Ensure boolean columns are treated as int for Plotly graph_objs if needed
+
     for col in ['Stage_fear_Yes', 'Drained_after_socializing_Yes']:
         if col in data.columns:
-             data[col] = data[col].astype(int)
+            data[col] = data[col].astype(int)
 
 except FileNotFoundError:
-    st.error("Error: 'processed_data.csv' not found. Please ensure it's in the same directory as app.py.")
-    st.stop() # Stop the app if data loading fails
+    st.error("Erro: 'processed_data.csv' não encontrado.")
+    st.stop()
 except Exception as e:
-    st.error(f"An error occurred during data loading or processing: {e}")
+    st.error(f"Erro ao carregar os dados: {e}")
     st.stop()
 
-# --- Load the trained model ---
-model = None # Initialize model to None
+# --- Carregamento do modelo ---
+model = None
 try:
     model = joblib.load('logistic_regression_model.pkl')
-    st.sidebar.success("Machine learning model loaded successfully!")
+    st.sidebar.success("Modelo carregado com sucesso!")
 except FileNotFoundError:
-    st.sidebar.warning("Warning: 'logistic_regression_model.pkl' not found. The prediction functionality will not be available.")
+    st.sidebar.warning("Modelo não encontrado: 'logistic_regression_model.pkl'.")
 except Exception as e:
-    st.sidebar.error(f"An error occurred while loading the model: {e}")
+    st.sidebar.error(f"Erro ao carregar o modelo: {e}")
 
-
-# --- Interactive Scatter Plot ---
-st.header('Interactive Scatter Plot: Time Spent Alone vs. Post Frequency')
-
-fig_scatter = px.scatter(data,
-                 x='Time_spent_Alone',
-                 y='Post_frequency',
-                 size='Friends_circle_size',
-                 color='Personality',
-                 hover_name=data.index,
-                 title='Tempo Sozinho vs. Frequência de Postagem (Colorido por Personalidade, Tamanho por Círculo de Amizade)'
-                )
-st.plotly_chart(fig_scatter, use_container_width=True)
-
-
-# --- Interactive Box/Violin Plots for Numeric Variables with Selection ---
-st.header('Distribution of Numeric Variables by Personality (Box/Violin Plots)')
-
-numeric_columns = ['Time_spent_Alone', 'Social_event_attendance', 'Going_outside', 'Friends_circle_size', 'Post_frequency']
-target_column = 'Personality' # Already converted to string above
-
-# Add a selectbox for the user to choose the numeric variable
-selected_numeric_col = st.selectbox(
-    'Select a numeric variable to visualize:',
-    numeric_columns
+# --- Navegação ---
+st.sidebar.title("Navegação")
+pagina = st.sidebar.selectbox(
+    "Selecione a seção:",
+    ["Gráfico de Dispersão", "Box/Violin", "Sunburst", "Previsão"]
 )
 
-# Generate the Box/Violin plot for the selected column
-if selected_numeric_col:
-    st.subheader(f'Distribution of {selected_numeric_col} by Personality')
+# --- Página: Gráfico de Dispersão ---
+if pagina == "Gráfico de Dispersão":
+    st.header('Gráfico de Dispersão: Tempo Sozinho vs. Frequência de Postagem')
 
-    fig_bv = go.Figure()
-
-    # Add initial Box plot for the selected numeric column by Personality
-    fig_bv.add_trace(go.Box(
-        y=data[data[target_column] == '0'][selected_numeric_col], # Use string '0' and '1'
-        name='Extrovert (0)'
-    ))
-    fig_bv.add_trace(go.Box(
-        y=data[data[target_column] == '1'][selected_numeric_col], # Use string '0' and '1'
-        name='Introvert (1)'
-    ))
-
-    # Add Violin plot traces, initially hidden
-    fig_bv.add_trace(go.Violin(
-        y=data[data[target_column] == '0'][selected_numeric_col],
-        name='Extrovert (0)',
-        visible=False # Initially hidden
-    ))
-    fig_bv.add_trace(go.Violin(
-        y=data[data[target_column] == '1'][selected_numeric_col],
-        name='Introvert (1)',
-        visible=False # Initially hidden
-    ))
-
-
-    fig_bv.layout.update(
-       updatemenus = [
-          go.layout.Updatemenu(
-             type = "buttons", direction = "left", buttons=list(
-                [
-                   dict(
-                       args = [{"visible": [True, True, False, False], "type": "box"}], # Show Box, Hide Violin
-                       label = "Box",
-                       method = "restyle"
-                   ),
-                   dict(
-                       args = [{"visible": [False, False, True, True], "type": "violin"}], # Hide Box, Show Violin
-                       label = "Violin",
-                       method = "restyle"
-                   )
-                ]
-             ),
-             pad = {"r": 2, "t": 2},
-             showactive = True,
-             x = 0.11,
-             xanchor = "left",
-             y = 1.1,
-             yanchor = "top"
-          ),
-       ],
-       title = f'Distribuição de {selected_numeric_col} por Personalidade', # Title is set in st.subheader
-       yaxis_title = selected_numeric_col
+    fig_scatter = px.scatter(
+        data,
+        x='Time_spent_Alone',
+        y='Post_frequency',
+        size='Friends_circle_size',
+        color='Personality',
+        hover_name=data.index,
+        title='Tempo Sozinho vs. Frequência de Postagem',
+        height=650
     )
-    st.plotly_chart(fig_bv, use_container_width=True)
+    st.plotly_chart(fig_scatter, use_container_width=True)
 
-# --- Sunburst Chart Section ---
-st.header('Gráfico Sunburst das Variáveis Categóricas por Personalidade')
+# --- Página: Box/Violin ---
+elif pagina == "Box/Violin":
+    st.header('Distribuição de Variáveis Numéricas por Personalidade')
 
-# Legenda das Abreviações
-st.markdown("""
-**Legenda das Abreviações:**
+    numeric_columns = ['Time_spent_Alone', 'Social_event_attendance', 'Going_outside', 'Friends_circle_size', 'Post_frequency']
+    target_column = 'Personality'
 
-*   **TSA:** Time_spent_Alone (Tempo Sozinho)
-*   **SEA:** Social_event_attendance (Participação em eventos sociais)
-*   **GO:** Going_outside (Sair)
-*   **FCS:** Friends_circle_size (Tamanho do círculo de amizade)
-*   **PF:** Post_frequency (Frequência de Postagem)
-""")
-
-
-# Load the categorized data
-try:
-    categorized_data = pd.read_csv('categorized_data.csv')
-    # Ensure 'Personality' is treated as string for plotly if needed
-    if categorized_data['Personality'].dtype != 'object':
-         categorized_data['Personality'] = categorized_data['Personality'].astype(str)
-
-    # Identify the available categorical columns (excluding Personality)
-    available_categorical_columns = [col for col in categorized_data.columns if col.endswith('_category')]
-
-    # Add a multiselect widget for interactive column selection
-    selected_path_columns = st.multiselect(
-        'Selecione as variáveis para o caminho do gráfico Sunburst (a ordem importa):',
-        available_categorical_columns,
-        default=available_categorical_columns # Default selection includes all categorized columns
+    selected_numeric_col = st.sidebar.selectbox(
+        'Escolha a variável numérica:',
+        numeric_columns
     )
 
-    # Always include 'Personality' as the first level
-    path_columns_with_personality = ['Personality'] + selected_path_columns
+    if selected_numeric_col:
+        fig_bv = go.Figure()
 
-    # Ensure at least 'Personality' is selected to avoid errors
-    if not selected_path_columns:
-        st.warning("Por favor, selecione pelo menos uma variável categórica além de 'Personality'.")
-    else:
-        # Calculate counts for the sunburst chart based on selected columns
-        sunburst_data = categorized_data.groupby(path_columns_with_personality).size().reset_index(name='count')
+        fig_bv.add_trace(go.Box(
+            y=data[data[target_column] == '0'][selected_numeric_col],
+            name='Extrovert (0)'
+        ))
+        fig_bv.add_trace(go.Box(
+            y=data[data[target_column] == '1'][selected_numeric_col],
+            name='Introvert (1)'
+        ))
 
-        # Create the sunburst chart
-        fig_sunburst = px.sunburst(sunburst_data,
-                                   path=path_columns_with_personality,
-                                   values='count',
-                                   title='Distribuição Categórica por Personalidade') # Title can be adjusted
+        fig_bv.add_trace(go.Violin(
+            y=data[data[target_column] == '0'][selected_numeric_col],
+            name='Extrovert (0)',
+            visible=False
+        ))
+        fig_bv.add_trace(go.Violin(
+            y=data[data[target_column] == '1'][selected_numeric_col],
+            name='Introvert (1)',
+            visible=False
+        ))
 
-        # Display the sunburst chart in Streamlit
-        st.plotly_chart(fig_sunburst, use_container_width=True)
+        fig_bv.update_layout(
+            updatemenus=[
+                go.layout.Updatemenu(
+                    type="buttons",
+                    direction="left",
+                    buttons=[
+                        dict(
+                            args=[{"visible": [True, True, False, False]}],
+                            label="Box",
+                            method="restyle"
+                        ),
+                        dict(
+                            args=[{"visible": [False, False, True, True]}],
+                            label="Violin",
+                            method="restyle"
+                        )
+                    ],
+                    x=0.1, xanchor="left", y=1.1, yanchor="top"
+                )
+            ],
+            title=f'Distribuição de {selected_numeric_col} por Personalidade',
+            yaxis_title=selected_numeric_col,
+            height=650
+        )
+        st.plotly_chart(fig_bv, use_container_width=True)
 
-except FileNotFoundError:
-    st.error("Error: 'categorized_data.csv' not found. Please ensure it's in the same directory as app.py.")
-except Exception as e:
-    st.error(f"An error occurred while creating the Sunburst chart: {e}")
+# --- Página: Sunburst ---
+elif pagina == "Sunburst":
+    st.header('Gráfico Sunburst por Personalidade')
 
+    try:
+        categorized_data = pd.read_csv('categorized_data.csv')
+        if categorized_data['Personality'].dtype != 'object':
+            categorized_data['Personality'] = categorized_data['Personality'].astype(str)
 
-# --- Machine Learning Prediction Section ---
-st.header('Prever Personalidade')
+        available_categorical_columns = [col for col in categorized_data.columns if col.endswith('_category')]
 
-if model: # Only show this section if the model was loaded successfully
-    st.write("Insira os valores para cada característica para prever a personalidade (0: Extrovert, 1: Introvert).")
+        selected_path_columns = st.sidebar.multiselect(
+            'Selecione variáveis para o caminho do Sunburst:',
+            available_categorical_columns,
+            default=available_categorical_columns
+        )
 
-    # Create input fields for each feature used in the model
-    # Get the feature names from the 'data' DataFrame after loading
-    # Exclude categorical columns that were not used in training
-    feature_names = [col for col in data.columns if col not in ['Personality', 'Stage_fear_Yes', 'Drained_after_socializing_Yes']]
+        path_columns = ['Personality'] + selected_path_columns
 
+        if selected_path_columns:
+            sunburst_data = categorized_data.groupby(path_columns).size().reset_index(name='count')
 
-    input_data = {}
-    if feature_names: # Only create inputs if feature names are available
+            fig_sunburst = px.sunburst(
+                sunburst_data,
+                path=path_columns,
+                values='count',
+                title='Distribuição Categórica por Personalidade',
+                height=650
+            )
+            st.plotly_chart(fig_sunburst, use_container_width=True)
+        else:
+            st.warning("Selecione pelo menos uma variável além de 'Personality'.")
+
+    except FileNotFoundError:
+        st.error("Erro: 'categorized_data.csv' não encontrado.")
+    except Exception as e:
+        st.error(f"Erro ao criar o gráfico Sunburst: {e}")
+
+# --- Página: Previsão ---
+elif pagina == "Previsão":
+    st.header('Prever Personalidade com o Modelo')
+
+    if model:
+        feature_names = [col for col in data.columns if col != 'Personality']
+        input_data = {}
+
         for feature in feature_names:
-            # Try to get a default value from the 'data' DataFrame
-            default_value = None
-            if feature in data.columns:
-                if data[feature].dtype in ['float64', 'int64']:
-                     default_value = float(data[feature].mean())
-                elif data[feature].dtype == 'bool':
-                     # Convert boolean to int for mean calculation if needed, but for default value mode is better
-                     default_value = bool(data[feature].mode()[0])
-                else:
-                     default_value = str(data[feature].mode()[0]) # Handle other dtypes appropriately
-
+            default = float(data[feature].mean()) if data[feature].dtype in ['float64', 'int64'] else data[feature].mode()[0]
 
             if data[feature].dtype in ['float64', 'int64']:
-                 input_data[feature] = st.number_input(f'Enter value for {feature}', value=default_value)
+                input_data[feature] = st.number_input(f'{feature}:', value=default)
             elif data[feature].dtype == 'bool':
-                 input_data[feature] = st.checkbox(f'Select if {feature} is True', value=default_value)
+                input_data[feature] = st.checkbox(f'{feature}:', value=bool(default))
             else:
-                 input_data[feature] = st.text_input(f'Enter value for {feature}', value=default_value)
+                input_data[feature] = st.text_input(f'{feature}:', value=str(default))
 
-
-        # Create a button to trigger the prediction
-        if st.button('Prever Personalidade'):
+        if st.button("Prever"):
             try:
-                # Convert input data to a pandas DataFrame in the correct order
-                input_df = pd.DataFrame([input_data])
+                input_df = pd.DataFrame([input_data])[feature_names]
 
-                # Ensure the order of columns in input_df matches the order used during training
-                # Filter feature_names to only include those used in the model
-                model_feature_names = [col for col in data.columns if col not in ['Personality', 'Stage_fear_Yes', 'Drained_after_socializing_Yes']]
-                input_df = input_df[model_feature_names]
+                for col in ['Stage_fear_Yes', 'Drained_after_socializing_Yes']:
+                    if col in input_df.columns:
+                        input_df[col] = input_df[col].astype(bool)
 
+                pred = model.predict(input_df)[0]
+                proba = model.predict_proba(input_df)[0]
 
-                # Convert boolean columns back to correct type if necessary for prediction
-                # Removed the lines that convert boolean columns as they are no longer used in the model
-                #for col in ['Stage_fear_Yes', 'Drained_after_socializing_Yes']:
-                    #if col in input_df.columns:
-                         #input_df[col] = input_df[col].astype(bool) # Convert back to boolean
-
-                # Make the prediction
-                prediction = model.predict(input_df)
-                prediction_proba = model.predict_proba(input_df) # Get probabilities
-
-                # Display the prediction result
-                predicted_class = "Introvert" if prediction[0] == 1 else "Extrovert"
-                st.subheader(f"Predicted Personality: **{predicted_class}**")
-                st.write(f"Prediction Probability (Extrovert): {prediction_proba[0][0]:.4f}")
-                st.write(f"Prediction Probability (Introvert): {prediction_proba[0][1]:.4f}")
+                resultado = "Introvertido" if pred == 1 else "Extrovertido"
+                st.subheader(f"Resultado: **{resultado}**")
+                st.write(f"Probabilidade (Extrovertido): {proba[0]:.4f}")
+                st.write(f"Probabilidade (Introvertido): {proba[1]:.4f}")
 
             except Exception as e:
-                st.error(f"An error occurred during prediction: {e}")
-else:
-    st.warning("Machine learning model not loaded. Prediction functionality is not available.")
-
-
-# --- Optional: Add more sections for categorical variables, etc. ---
-# st.header('Distribution of Categorical Variables')
-# ... add code for count plots or other categorical visualizations ...
+                st.error(f"Erro durante a predição: {e}")
+    else:
+        st.warning("Modelo não carregado. A previsão não está disponível.")
