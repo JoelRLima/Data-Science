@@ -162,67 +162,40 @@ elif pagina == "Previsão":
     st.header('Prever Personalidade')
 
 if model: # Only show this section if the model was loaded successfully
-    st.write("Insira os valores para cada característica para prever a personalidade (0: Extrovert, 1: Introvert).")
+    st.header('Prever Personalidade com o Modelo')
 
-    # Create input fields for each feature used in the model
-    # Get the feature names from the 'data' DataFrame after loading
-    # Exclude categorical columns that were not used in training
-    feature_names = [col for col in data.columns if col not in ['Personality', 'Stage_fear_Yes', 'Drained_after_socializing_Yes']]
+    if model:
+        feature_names = [col for col in data.columns if col != 'Personality']
+        input_data = {}
 
-
-    input_data = {}
-    if feature_names: # Only create inputs if feature names are available
         for feature in feature_names:
-            # Try to get a default value from the 'data' DataFrame
-            default_value = None
-            if feature in data.columns:
-                if data[feature].dtype in ['float64', 'int64']:
-                     default_value = float(data[feature].mean())
-                elif data[feature].dtype == 'bool':
-                     # Convert boolean to int for mean calculation if needed, but for default value mode is better
-                     default_value = bool(data[feature].mode()[0])
-                else:
-                     default_value = str(data[feature].mode()[0]) # Handle other dtypes appropriately
-
+            default = float(data[feature].mean()) if data[feature].dtype in ['float64', 'int64'] else data[feature].mode()[0]
 
             if data[feature].dtype in ['float64', 'int64']:
-                 input_data[feature] = st.number_input(f'Enter value for {feature}', value=default_value)
+                input_data[feature] = st.number_input(f'{feature}:', value=default)
             elif data[feature].dtype == 'bool':
-                 input_data[feature] = st.checkbox(f'Select if {feature} is True', value=default_value)
+                input_data[feature] = st.checkbox(f'{feature}:', value=bool(default))
             else:
-                 input_data[feature] = st.text_input(f'Enter value for {feature}', value=default_value)
+                input_data[feature] = st.text_input(f'{feature}:', value=str(default))
 
-
-        # Create a button to trigger the prediction
-        if st.button('Prever Personalidade'):
+        if st.button("Prever"):
             try:
-                # Convert input data to a pandas DataFrame in the correct order
-                input_df = pd.DataFrame([input_data])
+                input_df = pd.DataFrame([input_data])[feature_names]
 
-                # Ensure the order of columns in input_df matches the order used during training
-                # Filter feature_names to only include those used in the model
-                model_feature_names = [col for col in data.columns if col not in ['Personality', 'Stage_fear_Yes', 'Drained_after_socializing_Yes']]
-                input_df = input_df[model_feature_names]
+                for col in ['Stage_fear_Yes', 'Drained_after_socializing_Yes']:
+                    if col in input_df.columns:
+                        input_df[col] = input_df[col].astype(bool)
 
+                pred = model.predict(input_df)[0]
+                proba = model.predict_proba(input_df)[0]
 
-                # Convert boolean columns back to correct type if necessary for prediction
-                # Removed the lines that convert boolean columns as they are no longer used in the model
-                #for col in ['Stage_fear_Yes', 'Drained_after_socializing_Yes']:
-                    #if col in input_df.columns:
-                         #input_df[col] = input_df[col].astype(bool) # Convert back to boolean
-
-                # Make the prediction
-                prediction = model.predict(input_df)
-                prediction_proba = model.predict_proba(input_df) # Get probabilities
-
-                # Display the prediction result
-                predicted_class = "Introvert" if prediction[0] == 1 else "Extrovert"
-                st.subheader(f"Predicted Personality: **{predicted_class}**")
-                st.write(f"Prediction Probability (Extrovert): {prediction_proba[0][0]:.4f}")
-                st.write(f"Prediction Probability (Introvert): {prediction_proba[0][1]:.4f}")
+                resultado = "Introvertido" if pred == 1 else "Extrovertido"
+                st.subheader(f"Resultado: **{resultado}**")
+                st.write(f"Probabilidade (Extrovertido): {proba[0]:.4f}")
+                st.write(f"Probabilidade (Introvertido): {proba[1]:.4f}")
 
             except Exception as e:
-                st.error(f"An error occurred during prediction: {e}")
-else:
-    st.warning("Machine learning model not loaded. Prediction functionality is not available.")
+                st.error(f"Erro durante a predição: {e}")
+    else:
+        st.warning("Modelo não carregado. A previsão não está disponível.")
 
